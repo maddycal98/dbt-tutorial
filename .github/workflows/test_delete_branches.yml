@@ -1,7 +1,7 @@
 name: Test Delete Merged and Stale Branches
 
 on:
-    workflow_dispatch:  # Allows manual execution
+    workflow_dispatch:  # Allows manual execution - adding test comment
     
     schedule:
     - cron: "0 0 * * *"  # Runs daily at midnight UTC
