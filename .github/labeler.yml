@@ -1,0 +1,14 @@
+version: 1
+
+labels:
+- label: "parsers"
+  files: 
+  - "parsers/.*(.py)"
+
+- label: "utils"
+  files: 
+  - "utils/.*(.py)"
+
+- label: "actions"
+  files: 
+  - ".github/.*(.yml)"

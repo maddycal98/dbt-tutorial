@@ -1,0 +1,51 @@
+name: Pull Request for Main Branch
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  auto-pull-request:
+    name: Pull Request Creation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Pull Request Creation and Prompt
+        id: pull_request
+        uses: vsoch/pull-request-action@1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          PULL_REQUEST_BRANCH: "main"
+          PULL_REQUEST_BODY: |
+            # Main Release Pull Request
+            ## What does this PR do?
+            <!--- Describe your changes in detail -->
+          PULL_REQUEST_TITLE: Main Branch Release
+      # - name: Wait for PR Approval
+      #   run: |
+      #     echo "Checking if the PR has been approved..."
+      #     PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --head "${{ env.branch }}" --json number --jq '.[0].number')
+
+      #     if [ -z "$PR_NUMBER" ]; then
+      #       echo "❌ No open PR found for branch ${{ env.branch }}."
+      #       exit 1
+      #     fi
+
+      #     APPROVALS=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.state=="APPROVED")) | length')
+      #     echo "Total Approvals: $APPROVALS"
+
+      #     if [[ "$APPROVALS" -lt 1 ]]; then
+      #       echo "❌ PR does not have enough approvals! Exiting."
+      #       exit 1
+      #     fi
+
+      #     echo "✅ PR is approved! Proceeding."
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

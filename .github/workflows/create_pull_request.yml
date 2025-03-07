@@ -1,0 +1,36 @@
+name: Pull Request for Develop Branch
+
+on:
+  push:
+    branches-ignore:
+      - develop
+      - main
+
+jobs:
+  auto-pull-request:
+    name: Pull Request Creation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Extract branch name
+        shell: bash
+        run: |
+          echo "Raw GITHUB_REF: ${GITHUB_REF}"
+          branch=$(echo ${GITHUB_REF#refs/heads/})
+          echo "Extracted branch: $branch"
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+        id: extract_branch
+
+      # - name: Pull Request Creation and Prompt
+      #   id: pull_request
+      #   uses: vsoch/pull-request-action@1.1.0
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      #     PULL_REQUEST_BRANCH: "develop"
+      #     PULL_REQUEST_BODY: |
+      #       # Pull Request for branch ${{ steps.extract_branch.outputs.branch }}
+      #       ## What does this PR do?
+      #       <!--- Describe your changes in detail -->
+      #     PULL_REQUEST_TITLE: ${{ steps.extract_branch.outputs.branch }}
+      #     PULL_REQUEST_DRAFT: false

@@ -1,0 +1,72 @@
+name: Test Delete Merged and Stale Branches
+
+on:
+    workflow_dispatch:  # Allows manual execution
+    
+    schedule:
+    - cron: "0 0 * * *"  # Runs daily at midnight UTC
+  
+
+permissions:
+  contents: read
+
+jobs:
+  test-delete-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh
+          gh --version
+
+      - name: Fetch All Branches
+        run: git fetch --prune
+
+      - name: Identify Branches to Delete
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          # Set thresholds
+          MERGED_THRESHOLD_DAYS=7  # Days since a branch was merged
+          STALE_THRESHOLD_DAYS=5  # Days since the last commit
+
+          # Get repository info
+          REPO=${{ github.repository }}
+
+          echo "🔍 Checking for branches to delete in repo: $REPO..."
+          echo "----------------------------------------------------"
+
+          # Get merged branches (excluding protected ones)
+          echo "🔎 Checking for merged branches older than $MERGED_THRESHOLD_DAYS days..."
+          gh api repos/$REPO/branches --jq '.[] | select(.protected == false) | .name' | while read branch; do
+            MERGED_AT=$(gh pr list --head "$branch" --state merged --json mergedAt --jq '.[].mergedAt' 2>/dev/null)
+            if [ -n "$MERGED_AT" ]; then
+              MERGED_SECONDS=$(date -d "$MERGED_AT" +%s)
+              NOW_SECONDS=$(date +%s)
+              DIFF_DAYS=$(( (NOW_SECONDS - MERGED_SECONDS) / 86400 ))
+              if [ "$DIFF_DAYS" -ge $MERGED_THRESHOLD_DAYS ]; then
+                echo "🗑️ Merged $DIFF_DAYS days ago: $branch"
+              fi
+            fi
+          done
+
+          # Get stale branches (excluding protected ones)
+          echo "🔎 Checking for stale branches older than $STALE_THRESHOLD_DAYS days..."
+          gh api repos/$REPO/branches --jq '.[] | select(.protected == false) | .name' | while read branch; do
+            LAST_COMMIT_DATE=$(git log -1 --format=%ci origin/$branch 2>/dev/null | awk '{print $1}')
+            if [ -n "$LAST_COMMIT_DATE" ]; then
+              LAST_COMMIT_SECONDS=$(date -d "$LAST_COMMIT_DATE" +%s)
+              NOW_SECONDS=$(date +%s)
+              DIFF_DAYS=$(( (NOW_SECONDS - LAST_COMMIT_SECONDS) / 86400 ))
+              if [ "$DIFF_DAYS" -ge $STALE_THRESHOLD_DAYS ]; then
+                echo "⚠️ Stale ($DIFF_DAYS days since last commit): $branch"
+              fi
+            fi
+          done
+
+          echo "----------------------------------------------------"
+          echo "✅ Test complete. These branches **would be deleted**, but no actual deletions occurred."
