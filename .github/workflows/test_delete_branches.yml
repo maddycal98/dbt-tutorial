@@ -25,13 +25,25 @@ jobs:
       - name: Fetch All Branches
         run: git fetch --prune
 
+      - name: Print Protected and Unprotected Branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Fetching branches for repo: ${{ github.repository }}"
+      
+          echo "🔐 Protected branches:"
+          gh api repos/${{ github.repository }}/branches --jq '.[] | select(.protected == true) | .name'
+      
+          echo "🛠️ Unprotected branches:"
+          gh api repos/${{ github.repository }}/branches --jq '.[] | select(.protected == false) | .name'
+
       - name: Identify Branches to Delete
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Set thresholds
           MERGED_THRESHOLD_DAYS=7  # Days since a branch was merged
-          STALE_THRESHOLD_DAYS=5  # Days since the last commit
+          STALE_THRESHOLD_DAYS=90  # Days since the last commit
 
           # Get repository info
           REPO=${{ github.repository }}
