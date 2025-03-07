@@ -1,0 +1,13 @@
+name: PR Type Labeler
+
+on:
+- pull_request
+
+jobs:
+  build:
+    name: Labeler Job
+    runs-on: ubuntu-latest
+    steps:
+    - uses: srvaroa/labeler@master
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

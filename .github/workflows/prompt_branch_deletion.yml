@@ -1,0 +1,33 @@
+name: Prompt Branch Deletion
+
+on:
+  pull_request:
+    types:
+      - closed  # Runs when a PR is closed (either merged or manually closed)
+
+jobs:
+  prompt-delete-branch:
+    name: Prompt Branch Deletion to User
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true  # Ensures it runs only for merged PRs
+
+    steps:
+      - name: Comment on PR to Prompt Branch Deletion
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const branchName = context.payload.pull_request.head.ref;
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+
+            github.rest.issues.createComment({
+              owner: repoOwner,
+              repo: repoName,
+              issue_number: prNumber,
+              body: `✅ This PR has been **merged**!
+
+              **Please consider deleting this branch \`${branchName}\`** now that you have merged it. 
+              If you are sure you want to delete this branch, **comment \`/delete-branch\` below to confirm.**` 
+            });
